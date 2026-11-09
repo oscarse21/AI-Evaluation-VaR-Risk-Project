@@ -1,0 +1,17 @@
+# IntelliJ and local build outputs
+.idea/
+*.iml
+out/
+target/
+*.class
+
+# Local datasets and generated results: do not publish by accident
+*.csv
+*.parquet
+*.xlsx
+*.xls
+*.log
+
+# Operating system files
+.DS_Store
+Thumbs.db
