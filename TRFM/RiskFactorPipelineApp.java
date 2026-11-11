@@ -18,7 +18,7 @@ public class RiskFactorPipelineApp
 
     public static void main(String[] args) throws Exception
     {
-        runOneDayVarDemo();
+        
     }
 
 
@@ -157,69 +157,6 @@ public class RiskFactorPipelineApp
             this.crossFactorPnL = crossFactorPnL;
             this.totalPnL = totalPnL;
         }
-    }
-
-
-
-    private static void runOneDayVarDemo() {
-        int nDays = 500;
-        int nScenarios = 5000;
-        double spot = 100.0;
-        double quantity = 100.0;
-
-        // Synthetic daily log returns
-        Random random = new Random(42L);
-        double[][] returns = new double[nDays][1];
-        List<LocalDate> dates = new ArrayList<>();
-
-        for (int i = 0; i < nDays; i++) {
-            returns[i][0] = 0.012 * random.nextGaussian();
-            dates.add(LocalDate.of(2024, 1, 1).plusDays(i));
-        }
-
-        List<String> factors = List.of(FactorIds.spot("DEMO"));
-
-        RiskFactorMatrix matrix =
-                new RiskFactorMatrix(dates, factors, returns);
-
-        // EWMA volatility calibration
-        VolatilityModel model = new EwmaVolatilityModel(0.94);
-        var volResult = model.estimate(matrix);
-        double[] nextSigma =
-                model.forecastNextSigma(matrix, volResult);
-
-        ResidualMatrix residuals =
-                ResidualBuilder.build(matrix, volResult);
-
-        // State-independent filtered historical simulation
-        FhsScenarioGenerator generator =
-                new FhsScenarioGenerator(residuals, 80L);
-
-        List<FhsScenario> scenarios =
-                generator.drawScenarios(nextSigma, nScenarios);
-
-        // A simple portfolio of 100 shares
-        OptionGreekRow position = new OptionGreekRow(
-                "DEMO_STOCK", "DEMO", FxIds.NO_FX_ID,
-                quantity, 1.0, 0.0, 0.0,
-                Map.of(), Map.of(), Map.of()
-        );
-
-        Portfolio portfolio = new Portfolio(List.of(position));
-
-        double[] pnls = PortfolioPnLCalculator.computePnLDistribution(
-                portfolio, factors, scenarios,
-                Map.of("DEMO", spot), Map.of()
-        );
-
-        VarResult var95 = VarCalculator.computeHistoricalVar(pnls, 0.95);
-        VarResult var99 = VarCalculator.computeHistoricalVar(pnls, 0.99);
-
-        System.out.println("=== 1-DAY VaR DEMO ===");
-        System.out.println("Synthetic data: " + nDays + " observations");
-        System.out.println("Portfolio value: " + (spot * quantity));
-        System.out.printf("1-day VaR 95%%: %.2f%n", var95.getVar());
-        System.out.printf("1-day VaR 99%%: %.2f%n", var99.getVar());
     }
 
 
